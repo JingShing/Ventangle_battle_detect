@@ -52,17 +52,21 @@ def detect_attack(target, target_2, get_attack_target):
     if target["all_succ"]:
         get_attack_target["攻擊加值"] += 2
         get_attack_target["被攻擊"] = True
-    if target_2["all_fail"]:
-        get_attack_target["攻擊加值"] += 2
-    if target["total"] >= target_2["total"] + 5:
+        get_attack_target["加值原因"].append("對方奇效")
+    if target["total"] >= target_2["total"] + target["GB"]:
         get_attack_target["攻擊加值"] += 2
         get_attack_target["被攻擊"] = True
+        get_attack_target["加值原因"].append("對方GB加值")
+    if target_2["all_fail"]:
+        get_attack_target["攻擊加值"] += 2
+        get_attack_target["加值原因"].append("自身失誤")
 
 def generate_get_attacker(get_attack=False, get_attacker="", add_value=0):
     return {
         "被攻擊": get_attack,
         "攻擊對象": get_attacker,
-        "攻擊加值": add_value
+        "攻擊加值": add_value,
+        "加值原因":[]
     }
 
 def detect_all(target):
@@ -88,7 +92,7 @@ def detect_total(target):
 class BattleApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Battle Detector")
+        self.root.title("Ventangle Battle Detector")
         self.player_data = {}
         self.enemy_data = {}
 
@@ -117,6 +121,7 @@ class BattleApp:
         setattr(self, f"{entity}_修正值", self.create_input_field(frame, "修正值", 2))
         setattr(self, f"{entity}_奇效值", self.create_input_field(frame, "奇效值", 12))
         setattr(self, f"{entity}_失誤值", self.create_input_field(frame, "失誤值", 2))
+        setattr(self, f"{entity}_GB", self.create_input_field(frame, "GB", 5))
 
     def create_input_field(self, frame, label_text, default_value):
         frame_row = tk.Frame(frame)
@@ -159,7 +164,7 @@ class BattleApp:
 
     def collect_inputs(self, entity):
         data = {}
-        for key in ["出目", "修正值", "奇效值", "失誤值"]:
+        for key in ["出目", "修正值", "奇效值", "失誤值", "GB"]:
             input_field = getattr(self, f"{entity}_{key}")
             if input_field:
                 data[key] = int(input_field.get())
@@ -176,11 +181,16 @@ class BattleApp:
             for i in result["受到攻擊方"]:
                 target = i["攻擊對象"]
                 add_value = i["攻擊加值"]
-                results_text += f"攻擊對象：{target}\n額外受到：{add_value}攻擊加值\n\n"
+                results_text += f"攻擊對象：{target}\n額外受到：{add_value}攻擊加值\n"
+                if i["加值原因"]!=[]:
+                    results_text += "加值原因：\n"
+                    for j in i["加值原因"]:
+                        results_text+=j+"\n"
+                results_text+="\n"
             messagebox.showinfo("Result", results_text)
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = BattleApp(root)
-    root.geometry("300x300")
+    root.geometry("350x400")
     root.mainloop()
