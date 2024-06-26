@@ -1,7 +1,8 @@
 import json
 import tkinter as tk
 from tkinter import filedialog, messagebox
-
+# 失誤部分需要重寫一下
+# 可能改 total 判定
 def load_json(file_path):
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -29,7 +30,7 @@ def battle_detect(player, target):
 
     detect_all(player)
     detect_all(target)
-    if (player["total"] == target["total"] and not (player["all_succ"] and target["all_succ"])) or (player["all_fail"] and target["all_fail"]):
+    if (player["detect_total"] == target["detect_total"] and not (player["all_succ"] or target["all_succ"])) or (player["all_fail"] and target["all_fail"]):
         return result
 
     player_get_attack = generate_get_attacker(get_attacker="玩家", add_value=0)
@@ -37,14 +38,14 @@ def battle_detect(player, target):
     detect_attack(player, target, target_get_attack)
     detect_attack(target, player, player_get_attack)
 
-    if player["total"] > target["total"]:
+    if player["detect_total"] > target["detect_total"] or target.get("all_fail"):
         target_get_attack["被攻擊"] = True
-    else:
+    elif player["detect_total"] < target["detect_total"] or player.get("all_fail"):
         player_get_attack["被攻擊"] = True
 
-    if target_get_attack["被攻擊"]:
+    if target_get_attack["被攻擊"] and not player.get("all_fail"):
         result["受到攻擊方"].append(target_get_attack)
-    if player_get_attack["被攻擊"]:
+    if player_get_attack["被攻擊"] and not target.get("all_fail"):
         result["受到攻擊方"].append(player_get_attack)
     return result
 
@@ -53,7 +54,7 @@ def detect_attack(target, target_2, get_attack_target):
         get_attack_target["攻擊加值"] += 2
         get_attack_target["被攻擊"] = True
         get_attack_target["加值原因"].append("對方奇效")
-    if target["total"] >= target_2["total"] + target["GB"]:
+    if target["detect_total"] >= target_2["detect_total"] + target["GB"]:
         get_attack_target["攻擊加值"] += 2
         get_attack_target["被攻擊"] = True
         get_attack_target["加值原因"].append("對方GB加值")
@@ -87,7 +88,8 @@ def detect_if_all_success(target):
         target["all_succ"] = False
 
 def detect_total(target):
-    target["total"] = target["出目"] + target["修正值"]
+    target["總和值"] = target["出目"] + target["修正值"]
+    target["detect_total"] = target["出目"] + target["修正值"]
 
 class BattleApp:
     def __init__(self, root):
